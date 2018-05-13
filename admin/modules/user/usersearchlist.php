@@ -37,7 +37,7 @@ if(    $firstName == ""
             <br>
             <h3>
                 <b>
-                <img src = "../../images/search.png" style = "width:25px; height:25px"> 
+                <img src = "../../../images/search.png" style = "width:25px; height:25px"> 
                 Search for Developers</b>
             <h3>
             <form action = "../../home.php" class = "pure-form pure-form-stacked">
@@ -74,7 +74,7 @@ if(    $firstName == ""
             <br>
             <h3>
                 <b>
-                <img src = "../../images/search.png" style = "width:25px; height:25px"> 
+                <img src = "../../../images/search.png" style = "width:25px; height:25px"> 
                 Search Result for Developers</b>
             <h3>
             <table class = "pure-table pure-table-bordered" width = "750" 

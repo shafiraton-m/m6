@@ -37,7 +37,7 @@ if(    $firstName == ""
             <br>
             <h3>
                 <b>
-                <img src = "../../images/search.png" alt = "Forum" 
+                <img src = "../../../images/search.png" alt = "Forum" 
                     style = "width:25px; height:25px"> 
                     Search for Developers
                 </b>
@@ -76,7 +76,7 @@ if(    $firstName == ""
             <br>
             <h3>
                 <b>
-                <img src = "../../images/search.png" alt = "Forum" 
+                <img src = "../../../images/search.png" alt = "Forum" 
                     style = "width:25px; height:25px">
                     Search Result for Developers
                 </b>

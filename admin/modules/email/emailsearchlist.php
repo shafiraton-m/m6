@@ -43,7 +43,7 @@ if(    $date      == ""
             </p>
             <br>
             <h3>
-                <b><img src = "../../images/search.png" alt = "Search" 
+                <b><img src = "../../../images/search.png" alt = "Search" 
                     style = "width:25px; height:25px"> 
                     Search for Bulk Email Sent</b>
             <h3>
@@ -83,7 +83,7 @@ if(    $date      == ""
             </p>
             <br>
             <h3>
-                <b><img src = "../../images/search.png" alt = "Search" 
+                <b><img src = "../../../images/search.png" alt = "Search" 
                     style = "width:25px; height:25px"> 
                     Search Result for Bulk Email Sent</b>
             <h3>
