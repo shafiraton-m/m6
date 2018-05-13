@@ -1,0 +1,8 @@
+        </div>
+        <br><br>
+        <footer style = "background-color:#54A4A6;position:fixed;bottom:0;
+            width:100%;height:35px;color:white;">
+            <p style = "color:white; text"> Powered by ABC Jobs Pte Ltd</p>
+        </footer>
+    </body>
+</html>

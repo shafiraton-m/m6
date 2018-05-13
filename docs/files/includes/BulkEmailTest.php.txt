@@ -1,0 +1,115 @@
+<?php
+require_once 'BulkEmail.php';
+
+/**
+ * BulkEmail test case.
+ */
+class BulkEmailTest extends PHPUnit_Framework_TestCase
+{
+
+    /**
+     *
+     * @var BulkEmail
+     */
+    private $bulkEmail;
+
+    /**
+     * Prepares the environment before running a test.
+     */
+    protected function setUp()
+    {
+        parent::setUp();
+        
+        $this->bulkEmail = new BulkEmail();
+    }
+
+    /**
+     * Cleans up the environment after running a test.
+     */
+    protected function tearDown()
+    {
+        $this->bulkEmail = null;
+        
+        parent::tearDown();
+    }
+
+    /**
+     * Test constructing email with valid recipients' email address
+     */
+    public function testToUsersValid()
+    {
+        $recipients['Shafiraton Mardhiah'] = 'shafiraton@gmail.com';
+        $recipients['Dandarawiyah Shafira'] = 'dandarawiyah.shafira@gmail.com';
+        $recipients['Shafira Mardhiah'] = 'shafiraton.m@gmail.com';
+        
+        $sent = $this->bulkEmail->toUsers(
+            $recipients,
+            'PHPUnitTest testToUsersValid()',
+            'This is a PHP Unit Test'
+            );
+        $this->assertEquals("True", $sent);
+    }
+    
+    /**
+     * Test constructing email with invalid recipients' email address
+     */
+    public function testToUsersInvalid()
+    {
+        $recipients['Shafiraton Mardhiah'] = 'shafiraton';
+        $recipients['Dandarawiyah Shafira'] = 'dandarawiyah.shafira';
+        $recipients['Shafira Mardhiah'] = 'shafiraton.m';
+        
+        $sent = $this->bulkEmail->toUsers(
+            $recipients,
+            'PHPUnitTest testToUsersInvalid()',
+            'This is a PHP Unit Test'
+            );
+        $this->assertEquals("False", $sent);
+    }
+    
+    /**
+     * Test constructing email with valid recipients' email address
+     */
+    public function testToSubscribersValid()
+    {
+        $recipients['Shafiraton Mardhiah'] = 'shafiraton@gmail.com';
+        $recipients['Dandarawiyah Shafira'] = 'dandarawiyah.shafira@gmail.com';
+        $recipients['Shafira Mardhiah'] = 'shafiraton.m@gmail.com';
+        
+        $unsubs['Shafiraton Mardhiah'] = '<br><br>shafiraton@gmail.com';
+        $unsubs['Dandarawiyah Shafira'] = '<br><br>dandarawiyah.shafira@gmail.com';
+        $unsubs['Shafira Mardhiah'] = '<br><br>shafiraton.m@gmail.com';
+        
+        $sent = $this->bulkEmail->toSubscribers(
+            $recipients,
+            'PHPUnitTest testToSubscibersValid()',
+            'This is a PHP Unit Test',
+            $unsubs
+            );
+        $this->assertEquals("True", $sent);
+    }
+    
+    /**
+     * Test constructing email with invalid recipients' email address
+     */
+    public function testToSubscribersInvalid()
+    {
+        $recipients['Shafiraton Mardhiah'] = 'shafiraton';
+        $recipients['Dandarawiyah Shafira'] = 'dandarawiyah.shafira';
+        $recipients['Shafira Mardhiah'] = 'shafiraton.m';
+        
+        $unsubs['Shafiraton Mardhiah'] = '<br><br>shafiraton';
+        $unsubs['Dandarawiyah Shafira'] = '<br><br>dandarawiyah.shafira';
+        $unsubs['Shafira Mardhiah'] = '<br><br>shafiraton.m';
+        
+        $sent = $this->bulkEmail->toSubscribers(
+            $recipients,
+            'PHPUnitTest testToSubscribersInvalid()',
+            'This is a PHP Unit Test',
+            $unsubs
+            );
+        $this->assertEquals("False", $sent);
+    }
+}
+
+
