@@ -1,0 +1,290 @@
+<?php
+namespace classes\data;
+
+use classes\entity\User;
+use classes\util\DBUtil;
+/**
+ * This class provides the database access logic
+ * for User
+ * @author Shafiraton Mardhiah
+ *
+ */
+class UserManagerDB
+{
+    /**
+     * Instantiating the User class with information from $row
+     * @param array $row read from the database
+     * @return \classes\entity\User
+     */
+    public static function fillUser($row)
+    {
+        $user = new User();
+        $user->id        = $row["id"];
+        $user->firstName = $row["firstname"];
+        $user->lastName  = $row["lastname"];
+        $user->email     = $row["email"];
+        $user->salt      = $row["salt"];
+        $user->password  = $row["password"];
+		$user->account_creation_time = $row["account_creation_time"];
+		$user->role      = $row["role"];
+		$user->user_access = $row["user_access"];
+		$user->subscription = $row["subscription"];
+        return $user;
+    }
+    /**
+     * Read and return the user with the given email and password
+     * @param string $email
+     * @param string $password should be the salted hash password stored in database
+     * @return NULL|\classes\entity\User
+     */
+    public static function getUserByEmailPassword($email,$password)
+    {
+        $user = NULL;
+        $conn = DBUtil::getConnection();
+        $email = mysqli_real_escape_string($conn,$email);
+        $password = mysqli_real_escape_string($conn,$password);
+        $sql = "select * from tb_user where email = '$email' 
+            and password = '$password'";
+        $result = $conn->query($sql);
+        if ($result->num_rows > 0) {
+            if($row = $result->fetch_assoc()){
+                $user = self::fillUser($row);
+            }
+        }
+        $conn->close();
+        return $user;
+    }
+    /**
+     * Read and return the user with the given email
+     * @param string $email
+     * @return NULL|\classes\entity\User
+     */
+    public static function getUserByEmail($email)
+    {
+        $user = NULL;
+        $conn = DBUtil::getConnection();
+        $email = mysqli_real_escape_string($conn,$email);
+        $sql = "select * from tb_user where Email = '$email'";
+        $result = $conn->query($sql);
+        if ($result->num_rows > 0) {
+            if($row = $result->fetch_assoc()){
+                $user = self::fillUser($row);
+            }
+        }
+        $conn->close();
+        return $user;
+    }
+	/**
+	 * Read and return the user with the given id
+	 * @param int $id
+	 * @return NULL|\classes\entity\User
+	 */
+	public static function getUserById($id)
+    {
+        $user = NULL;
+        $conn = DBUtil::getConnection();
+        $id = mysqli_real_escape_string($conn,$id);
+        $sql = "select * from tb_user where id = '$id'";
+        $result = $conn->query($sql);
+        if ($result->num_rows > 0) {
+            if($row = $result->fetch_assoc()){
+                $user = self::fillUser($row);
+            }
+        }
+        $conn->close();
+        return $user;
+	}
+	/**
+	 * Read and return the user with the given salt
+	 * @param varchar $salt
+	 * @return NULL|\classes\entity\User
+	 */
+	public static function getUserBySalt($salt)
+	{
+	    $user = NULL;
+	    $conn = DBUtil::getConnection();
+	    $id = mysqli_real_escape_string($conn,$salt);
+	    $sql = "select * from tb_user where salt = '$salt'";
+	    $result = $conn->query($sql);
+	    if ($result->num_rows > 0) {
+	        if($row = $result->fetch_assoc()){
+	            $user = self::fillUser($row);
+	        }
+	    }
+	    $conn->close();
+	    return $user;
+	}
+	/**
+	 * Read and return the last login timestamp of the user with given email
+	 * @param string $email
+	 * @return string|mixed
+	 */
+	public static function getUserLogin($email)
+    {
+        $login = NULL;
+        $conn = DBUtil::getConnection();
+        $email = mysqli_real_escape_string($conn,$email);
+        $sql = "select log_in_time from tb_login where email = '$email' 
+            order by id desc limit 1";
+        $result = $conn->query($sql);
+        $row = $result->fetch_assoc(); 
+        $login = $row["log_in_time"];
+		if (is_null($login)){
+			$login = "No previous login";
+		}
+        $conn->close();
+        return $login;
+    }
+    /**
+     * Create new user or update existing user in the database
+     * @param User $user
+     */
+    public static function saveUser(User $user)
+    {
+        $conn = DBUtil::getConnection();
+        $sql = "call procSaveUser(?,?,?,?,?,?,?,?,?,?)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param(
+            "isssssssss", 
+            $user->id,
+            $user->firstName, 
+            $user->lastName, 
+            $user->email, 
+            $user->salt, 
+            $user->password, 
+            $user->account_creation_time, 
+            $user->role, 
+            $user->user_access,
+            $user->subscription
+        ); 
+        $stmt->execute();
+        if($stmt->errno != 0){
+            printf("Error: %s.\n",$stmt->error);
+        }
+        $stmt->close();
+        $conn->close();
+    }
+    /**
+     * Read and return the users with the given first name, last name and email
+     * @param string $firstName
+     * @param string $lastName
+     * @param string $email
+     * @return \classes\entity\User[] an array of objects
+     */
+    public static function searchUsers($firstName,$lastName,$email)
+    {
+        $users[] = array();
+        $conn = DBUtil::getConnection();
+        $firstName = mysqli_real_escape_string($conn,$firstName);
+        if ($firstName != "") {
+            $firstName = '%'.$firstName.'%';
+        }
+        $lastName = mysqli_real_escape_string($conn,$lastName);
+        if ($lastName != "") {
+            $lastName = '%'.$lastName.'%';
+        }
+        $email = mysqli_real_escape_string($conn,$email);
+        if ($email != "") {
+            $email = '%'.$email.'%';
+        }
+        $sql = "select * from tb_user 
+            where firstName like '$firstName' 
+            or lastName like '$lastName' 
+            or email like '$email'";
+        $result = $conn->query($sql);
+        if ($result->num_rows > 0) {
+            while($row = $result->fetch_assoc()){
+                $user = self::fillUser($row);
+				$users[] = $user;
+            }
+        }
+        $conn->close();
+        return $users;
+    }
+    /**
+     * Create new login of user in the database
+     * @param User $user
+     */
+    public static function loginUser(User $user)
+    {
+        $conn = DBUtil::getConnection();
+        $sql = "call procLoginUser(?)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("s", $user->email); 
+        $stmt->execute();
+        if($stmt->errno != 0){
+            printf("Error: %s.\n",$stmt->error);
+        }
+        $stmt->close();
+        $conn->close();
+    }
+    /**
+     * Update the password of the user with given email
+     * @param string $email
+     * @param string $password is the salted hash password of that submitted by end 
+     * user to be stored in database
+     */
+    public static function updatePassword($email,$password)
+    {
+        $message = NULL;
+        $conn = DBUtil::getConnection();
+        $sql = "UPDATE tb_user SET password = '$password' WHERE email = '$email';";
+        $stmt = $conn->prepare($sql);
+		if ($conn->query($sql) === FALSE) {
+			echo "Error updating record: " . $conn->error;
+		}
+		$conn->close();
+    }	
+    /**
+     * Update the subscription of the user with given salt
+     * @param string $salt
+     * @param string $subscription
+     */
+    public static function updateSubscription($salt,$subscription)
+    {
+        $conn = DBUtil::getConnection();
+        $sql = "UPDATE tb_user SET subscription = '$subscription' WHERE salt = '$salt';";
+        $stmt = $conn->prepare($sql);
+        if ($conn->query($sql) === FALSE) {
+            echo "Error updating record: " . $conn->error;
+        }
+        $conn->close();
+    }	
+	/**
+	 * Delete the user with the given id
+	 * @param int $id
+	 */
+    public static function deleteAccount($id)
+    {
+        $conn = DBUtil::getConnection();
+        $sql = "DELETE from tb_user WHERE id = '$id';";
+        $stmt = $conn->prepare($sql);
+		if ($conn->query($sql) === TRUE) {
+			echo "<script>alert(Record deleted successfully)</script>";
+		} else {
+			echo "Error updating record: " . $conn->error;
+		}
+		$conn->close();
+    }
+    /**
+     * Read and return all the users listed in the database
+     * @return \classes\entity\User[] an array of objects
+     */
+    public static function getAllUsers()
+    {
+        $users[] = array();
+        $conn = DBUtil::getConnection();
+        $sql = "select * from tb_user";
+        $result = $conn->query($sql);
+        if ($result->num_rows > 0) {
+            while($row = $result->fetch_assoc()){
+                $user = self::fillUser($row);
+                $users[] = $user;
+            }
+        }
+        $conn->close();
+        return $users;
+    }
+}
+
+?>

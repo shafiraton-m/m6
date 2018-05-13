@@ -1,0 +1,185 @@
+<?php
+session_start();
+require_once '../../../includes/autoload.php';
+
+ob_start();
+include '../../../includes/security.php';
+
+use classes\business\UserManager;
+use classes\entity\User;
+use classes\business\Validation;
+
+$firstName = $_SESSION["firstName"];
+$lastName  = $_SESSION["lastName"];
+$email     = $_SESSION["email"];
+$subscription = $_SESSION["subscription"];
+$password  = NULL;
+$cpassword = NULL;
+
+$formerror      = "";
+$firstNameerror = "";
+$lastNameerror  = "";
+$passworderror  = "";
+$cpassworderror = "";
+$validate = new Validation();
+
+if(isset($_POST["submitted"])) {
+    $firstName = $_POST["firstName"];
+    $lastName  = $_POST["lastName"];
+    $email     = $_POST["email"];
+    $subscription = $_POST["subscription"];
+    $update = true;
+    
+    if($_POST["password"] == NULL) {
+        $password = $_SESSION['password'];
+    } else {
+        $password  = $_POST["password"];
+        $cpassword = $_POST["cpassword"];
+        
+        $checkP  = $validate->check_strength($password, $passworderror);
+        $checkCP = $validate->check_match($password, $cpassword, $cpassworderror);
+        
+        if($checkCP == false || $checkP == false) {
+            $update = false;                    
+        } else {
+            $UM = new UserManager();
+            $existuser = $UM->getUserByEmail($_SESSION["email"]);
+            $salt = $existuser->salt;
+            $password = hash('sha512',$salt.$password);
+        }
+    }
+
+    if(    $firstName != '' 
+        && $lastName  != '' 
+        && $email     != ''
+    ) {
+        $checkFN = $validate->check_name($firstName, $firstNameerror);
+        $checkLN = $validate->check_name($lastName, $lastNameerror);
+      
+        if($checkFN && $checkLN) {
+            $UM = new UserManager();
+            
+            if($email != $_SESSION["email"]) {
+                $existuser = $UM->getUserByEmail($email);
+                if(is_null($existuser) == false) {
+                    $formerror = "User Email already in use, 
+                        unable to update email";
+                    $update = false;
+                }
+            }
+            if($update) {
+                $existuser = $UM->getUserByEmail($_SESSION['email']);
+                $existuser->firstName = $firstName;
+                $existuser->lastName  = $lastName;
+                $existuser->email     = $email;
+                $existuser->password  = $password;
+                $existuser->subscription  = $subscription;
+                $UM->saveUser($existuser);
+                $_SESSION['email']     = $email;
+                $_SESSION['firstName'] = $firstName;
+                $_SESSION['lastName']  = $lastName;
+                $_SESSION['role']      = $existuser->role;
+                $_SESSION['id']        = $existuser->id;
+                $_SESSION['subscription'] = $existuser->subscription;
+                $formerror = "<font color = green>
+                    User profile has been updated
+                    </font>";
+            }
+        }
+    } else {
+        $formerror = "Please provide required values";
+    }
+} else if(isset($_POST["cancelled"])) { 
+    echo '<meta http-equiv = "Refresh" content = "1; url = ../../home.php">'; 
+} else if(isset($_POST["reset"])) { 
+    $firstName = $_SESSION["firstName"];
+    $lastName = $_SESSION["lastName"];
+    $email = $_SESSION["email"];
+}
+?>
+<html>
+    <head> 
+        <title>Update My Profile</title>
+        <?php include '../../../includes/header.php'; ?>
+            <p style = "font-size:14px" align='left'>
+                <a href='../../home.php'>My Home Page</a>
+                &nbsp;&#187;&nbsp; Update My Profile
+            </p>
+            <form name = "myForm" method = "post" 
+                class = "pure-form pure-form-stacked">
+                <fieldset>
+                <legend><h1 align = 'center'><b>Update Profile</b></h1></legend>
+                <div><font color = red><?=$formerror?></div></font>
+                <table border = '0' width = "530" style = "font-size:18px">
+                    <col width = "200">
+                    <col width = "330">
+                    <tr>
+                        <td>First Name</td>
+                        <td>
+                            <font color = red><?=$firstNameerror?></font>
+                            <input type = "text" name = "firstName" 
+                                value = "<?=$firstName?>" size = "30">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Last Name</td>
+                        <td>
+                            <font color = red><?=$lastNameerror?></font>
+                            <input type = "text" name = "lastName" 
+                                value = "<?=$lastName?>" size = "30">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Email</td>
+                        <td><input type = "text" name = "email" 
+                            value = "<?=$email?>" size = "30"></td>
+                    </tr>
+                    <tr>
+                        <td>Subscription</td>
+                        <td>
+                            <input type = "text" name = "subscription" 
+                                value = "<?=$subscription?>" size = "30" 
+                            	data-toggle = "tooltip" data-placement = "bottom" 
+                                title="'Y' or 'N'">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>New Password</td>
+                        <td>
+                            <?=$passworderror?>
+                            <input type = "password" name = "password" placeholder 
+                                = "To Renew Password Only" 
+                                value = "<?=NULL?>" size = "30">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Confirm Password</td>
+                        <td>
+                            <?=$cpassworderror?>
+                            <input type = "password" name = "cpassword" placeholder 
+                                = "To Renew Password Only"  
+                                value = "<?=NULL?>" size = "30">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>
+                            <br>
+                            <input type = "submit" name = "submitted" 
+                                value = "Submit" class = "btn btn-default" 
+                                style = "background-color:green; color: white; 
+                                font-size:16px; font-weight:bold;">
+                            <input type = "submit" name = "reset" 
+                                value = "Reset" class = "btn btn-default"
+                                style = "background-color:darkblue; color: white; 
+                                font-size:16px; font-weight:bold;">
+                            <input type = "submit" name = "cancelled" 
+                                value = "Cancel" class = "btn btn-default" 
+                                style = "background-color:red; color: white; 
+                                font-size:16px; font-weight:bold;"></td>
+                        </td>
+                    </tr>
+                </table>
+                </fieldset>
+            </form>
+        <?php include '../../../includes/footer.php'; ?>

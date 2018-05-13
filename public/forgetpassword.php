@@ -1,0 +1,111 @@
+<?php
+use classes\business\UserManager;
+use classes\business\Validation;
+
+require_once '../includes/autoload.php';
+
+$email         = "";
+$password      = "";
+
+$formerror     = "";
+$securityerror = "";
+$validate = new Validation();
+
+if(isset($_POST["submitted"])) { 
+	$check_captcha = $validate->check_captcha($securityerror);
+    $email = $_POST["email"];
+	$UM = new UserManager();
+	$existuser = $UM->getUserByEmail($email);
+	
+	if(isset($existuser)) {
+        
+		if($check_captcha) {            
+			$name = $existuser-> firstName." ".$existuser-> lastName;
+			$salt = $existuser->salt;
+			//generate new password
+			$newpassword = $UM->randomPassword(8,1,"numbers,lower_case,upper_case");
+			$password = $newpassword[0];
+			//update database with new password
+			$UM->updatePassword($email,hash('sha512',$salt.$password));
+			//coding for sending email
+			require '../includes/phpmailer/PHPMailerAutoload.php';
+			$mail = new PHPMailer();
+			$mail->isSMTP();
+			$mail->Host = "in-v3.mailjet.com";
+			$mail->SMTPAuth = true;
+			$mail->Username = "da3b01077bcbdc20a81bcb8b6aa25844";
+			$mail->Password = "2c57db0b75ff75dbbab981f912f2743a";
+			$mail->SMTPSecure = "tls";
+			$mail->Port = 587;
+			$mail->From = "shafiraton.m@gmail.com";
+			$mail->FromName = "ABC Jobs Portal";
+			$mail->addAddress($email, $name);
+			$mail->isHTML(true);
+			$mail->Subject = "New Password";
+			$mail->Body = "Dear ".$name.", <br>your new password is ".$password.".";
+			$mail->AltBody = "This is the plain text version of the email content";
+            
+			if(!$mail->send()) {
+			    echo "Mailer Error:".$mail->ErrorInfo;
+			} else {
+			    $formerror = "<font color = green>New password has been 
+                    sent to ".$email."<br>Continue with 
+                    <a href = \"login.php\">login</a></font>";
+			}
+		}			
+	} else {
+			$formerror = "<font color = red>Invalid email user</font>";
+	}
+}
+
+?>
+<html>
+    <head> 
+        <title>Forget Password</title>
+        <?php include '../includes/header.php'; ?>
+        <script src = 'https://www.google.com/recaptcha/api.js'></script>
+            <form name = "myForm" method = "post" 
+                class = "pure-form pure-form-stacked">
+                <fieldset>
+                <legend>
+                    <h1 align = 'center'><b>Forget Password</b></h1>
+                </legend>
+                <div><font color = red><?=$formerror?></font></div>
+                <div class="row" style="padding-top: 5px; padding-bottom: 5px">
+                <div class="table-responsive">
+                <table border = '0' width = "50%" style = "font-size:18px">
+                    <col width = "40%">
+                    <col width = "60%">
+                    <tr>    
+                        <td style="text-align:right; padding:15px">Email</td>
+                        <td>
+                            <input type = "email" name = "email" 
+                                value = "<?=$email?>" size = "27">
+                        </td>
+                    </tr> 
+                    <tr>
+                        <td></td>
+                        <td>
+                            <?=$securityerror?>
+                            <div class = "captcha_wrapper" style = "margin:4px 0px">
+                                <div class = "g-recaptcha" data-sitekey = 
+                                    "6Lf7JE8UAAAAAHukmRF3mJPA0dDfVKYpq8oPYc-p"></div>
+                            </div>
+                        </td>
+                    </tr> 
+                    <tr>
+                        <td></td>
+                        <td>
+                            <br>
+                            <input type = "submit" name = "submitted" 
+                                value = "Submit" class = "btn btn-default" 
+                                style = "background-color:green; color:white; 
+                                font-size:16px; font-weight:bold;">
+                        </td>
+                    </tr>
+                </table>
+                </div>
+                </div>
+                </fieldset>
+            </form>
+        <?php include '../includes/footer.php'; ?>

@@ -1,0 +1,173 @@
+<?php
+require_once '../../../includes/autoload.php';
+use classes\util\DBUtil;
+use classes\business\UserManager;
+use classes\entity\User;
+use classes\business\Validation;
+
+$firstName = "";
+$lastName  = "";
+$email     = "";
+$password  = "";
+$cpassword = "";
+$salt      = "";
+
+$formerror      = "";
+$firstNameerror = "";
+$lastNameerror  = "";
+$emailerror     = "";
+$passworderror  = "";
+$cpassworderror = "";
+$securityerror  = "";
+$validate = new Validation();
+
+//Upon Submit
+if(isset($_REQUEST["submitted"])) {
+    $firstName = $_REQUEST["firstName"];
+    $lastName  = $_REQUEST["lastName"];
+    $email     = $_REQUEST["email"];
+    $password  = $_REQUEST["password"];
+    $cpassword = $_REQUEST["cpassword"];
+	
+    //Check inputs    
+    if(    $firstName != '' 
+        && $lastName  != '' 
+        && $email     != '' 
+        && $password  != ''
+    ) {			
+        $checkFN = $validate->check_name($firstName, $firstNameerror);
+        $checkLN = $validate->check_name($lastName, $lastNameerror);
+        $checkP = $validate->check_strength($password, $passworderror);
+        $checkCP = $validate->check_match($password, $cpassword, $cpassworderror);
+        $check_captcha = $validate->check_captcha($securityerror);
+                            
+        $UM = new UserManager();
+        $existuser = $UM->getUserByEmail($email);
+        
+        //Check if email has been used				
+        if(!isset($existuser)) {
+            if(    $checkFN 
+                && $checkLN 
+                && $checkP 
+                && $checkCP 
+                && $check_captcha
+            ) {					
+                // Save the Data to Database
+                $salt = $UM->randomPassword(6,1,"lower_case,upper_case,numbers");
+                $user = new User();
+                $user->firstName   = $firstName;
+                $user->lastName    = $lastName;
+                $user->email       = $email;
+                $user->salt        = $salt[0];
+                $user->password    = hash("sha512",$salt[0].$password);
+                $user->role        = "User";
+                $user->user_access = "Allowed";
+                $user->subscription = "Y";		
+                $UM->saveUser($user);
+                echo '<meta http-equiv = "Refresh" content = "1; 
+                    url = ./registerthankyou.php">';
+            
+            }
+        } else {
+            $emailerror = "<font color=red size='2'> User Already Exist</font>";
+        }
+    
+    }else{
+        $formerror = "Please fill in all the fields";
+    }
+}
+?>
+<html>
+    <head> 
+        <title>Registration Page</title>
+        <script src  =  'https://www.google.com/recaptcha/api.js'></script>
+        <script>
+            function customReset()
+            {
+                document.getElementById("firstName").value = "";
+                document.getElementById("lastName").value = "";
+                document.getElementById("email").value = "";
+                document.getElementById("password").value = "";
+                document.getElementById("cpassword").value = "";
+            }
+        </script>
+        <?php include '../../../includes/header.php'; ?>
+            <form name = "myForm" method = "post" class = "pure-form pure-form-stacked">
+                <fieldset>
+                <legend><h1 align = 'center'><b>Registration Form</b></h1></legend>
+                <div><font color = red><?=$formerror?></font></div>
+                <div class="row" style="padding-top: 5px; padding-bottom: 5px">
+                <div class="table-responsive">
+                <table border = '0' width = "50%" style = "font-size:18px">
+                    <col width = "40%">
+                    <col width = "60%">
+                    <tr>
+                        <td style="text-align:right; padding:15px">First Name</td>
+                        <td>
+                            <?=$firstNameerror?>
+                            <input type = "text" name = "firstName" id = "firstName" 
+                                value = "<?=$firstName?>" size = "27">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:right; padding:15px">Last Name</td>
+                        <td>
+                            <?=$lastNameerror?>
+                            <input type = "text" name = "lastName" id = "lastName" 
+                                value = "<?=$lastName?>" size = "27">
+                        </td>
+                    </tr>
+                    <tr>    
+                        <td style="text-align:right; padding:15px">Email</td>
+                        <td>
+                            <?=$emailerror?>
+                            <input type = "email" name = "email" id = "email" 
+                                value = "<?=$email?>" size = "27">
+                        </td>
+                    </tr>
+                    <tr>    
+                        <td style="text-align:right; padding:15px">Password</td>
+                        <td>
+                            <?=$passworderror?>
+                            <input type = "password" name = "password" id = "password" 
+                                value = "<?=$password?>" size = "27">
+                        </td>
+                    </tr>  
+                    <tr>    
+                        <td style="text-align:right; padding:15px">Confirm Password</td>
+                        <td>
+                            <?=$cpassworderror?>
+                            <input type = "password" name = "cpassword" id = "cpassword" 
+                                value = "<?=$cpassword?>" size = "27">
+                        </td>
+                    </tr>  
+                    <tr>
+                        <td></td>
+                        <td>
+                            <?=$securityerror?>
+                            <div class = "captcha_wrapper" style = "margin:4px 0px">
+                                <div class = "g-recaptcha" data-sitekey = 
+                                    "6Lf7JE8UAAAAAHukmRF3mJPA0dDfVKYpq8oPYc-p"></div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>
+                            <br>
+                            <input type = "submit" name = "submitted" value = "Submit" 
+                                class = "btn btn-default" 
+                                style = "background-color:green; color:white; 
+                                font-size:16px; font-weight:bold;">
+                            <input type = "button" name = "reset" value = "Reset" 
+                                onclick = "customReset()" class = "btn btn-default" 
+                                style = "background-color:red; color:white; 
+                                font-size:16px; font-weight:bold;">
+                        </td>
+                    </tr>
+                </table>
+                </div>
+                </div>
+                </fieldset>
+            </form>
+        <?php include '../../../includes/footer.php'; ?>
