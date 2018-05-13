@@ -15,58 +15,40 @@ if(isset($_POST["submitted"])) {
     $subject   = $_POST["subject"];
     $message   = $_POST["message"];
     $type      = 'All Users';
-    $recipient = '';
+    $sent_to   = '';
     $sent_by   = $_SESSION['email'];
     $sentFlag  = "False";
     
     $UM = new UserManager();
     $users = $UM->getAllUsers();
-          
-    //coding for sending email
-    require '../../../includes/phpmailer/PHPMailerAutoload.php';
-    $mail = new PHPMailer();    
-    $mail->isSMTP();
-    $mail->Host = 'in-v3.mailjet.com';
-    $mail->SMTPAuth = true;
-    $mail->Username = 'da3b01077bcbdc20a81bcb8b6aa25844';
-    $mail->Password = '2c57db0b75ff75dbbab981f912f2743a';
-    $mail->SMTPSecure = 'tls';
-    $mail->Port = 587;
-    $mail->setFrom('shafiraton.m@gmail.com', 'ABC Jobs Portal');
     
-    foreach ($users as $user) 
-    {        
-        if($user != null) 
-        {        
-            $email = $user->email;
-            $name  = $user->firstName." ".$user->lastName;
-            $mail->addAddress($email, $name);
-            $recipient .= $email.'; ';
+    // Define recipients array
+    $recipients = "";
+    foreach ($users as $user)
+    {
+        if($user != null) {
+            $name = $user->firstName.' '.$user->lastName;
+            $recipients[$name] = $user->email;
+            $sent_to .= $user->email.'; ';
         }
     }
+    //coding for sending email
+    require '../../../includes/BulkEmail.php';
+    $BM = new BulkEmail();
+    $sent = $BM->toUsers($recipients, $subject, $message);
     
-    $mail->Subject = $subject;
-    $mail->AltBody = "This is the plain text version of the email content";
-    $mail->Body = "Dear User, <br><br>".$message;
-    
-    if(!$mail->send()) {
-        echo "Mailer Error:".$mail->ErrorInfo;
-        $sentFlag = "False";
-    } else {
+    if ($sent == 'True')
+    {
         $formerror = "<font color = green>Email has been sent.</font>";
-        $sentFlag = "True";
+        $emailsent = new EmailSent();
+        $emailsent->subject   = $subject;
+        $emailsent->message   = $message;
+        $emailsent->type      = $type;
+        $emailsent->sent_by   = $sent_by;
+        $emailsent->recipient = $sent_to;
+        $EM = new EmailSentManager();
+        $EM->saveEmailSent($emailsent);
     }
-    
-    $emailsent = new EmailSent();
-    $emailsent->subject   = $subject;
-    $emailsent->message   = $message;
-    $emailsent->type      = $type;
-    $emailsent->sent_by   = $sent_by;
-    $emailsent->recipient = $recipient;
-    
-    $EM = new EmailSentManager();
-    $EM->saveEmailSent($emailsent);   
-            
 }
 
 ?>
