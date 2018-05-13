@@ -1,0 +1,102 @@
+<?php
+require 'phpmailer/PHPMailerAutoload.php';
+
+/**
+ * @author Shafiraton Mardhiah
+ */
+class BulkEmail
+{
+    const HOST = "in-v3.mailjet.com";
+    const USERNAME = "da3b01077bcbdc20a81bcb8b6aa25844";
+    const PASSWORD = "2c57db0b75ff75dbbab981f912f2743a";
+    const SENDEREMAIL = "shafiraton.m@gmail.com";
+    const SENDERNAME = "ABC Jobs Community Portal";
+    
+    /**
+     * Send bulk email to users with the given parameters
+     * @param array $recipients associates names with email addresses
+     * @param string $subject the email subject
+     * @param string $message the email message
+     * @return string $sentFlag returns true for successful sent or false for faliure
+     */
+    public function toUsers(
+        array $recipients,
+        $subject,
+        $message
+        )
+    {
+        $names = array_keys($recipients);
+        $mail = new PHPMailer();
+        $mail->isSMTP();
+        $mail->Host = self::HOST;
+        $mail->SMTPAuth = true;
+        $mail->Username = self::USERNAME;
+        $mail->Password = self::PASSWORD;
+        $mail->SMTPSecure = 'tls';
+        $mail->Port = 587;
+        $mail->setFrom(self::SENDEREMAIL, self::SENDERNAME);
+        
+        foreach ($names as $name)
+        {
+            $email = $recipients[$name];
+            $mail->addAddress($email, $name);
+        }
+        
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->Body = "Dear User,<br><br>".$message;
+        
+        if(!$mail->send()) {
+            echo "Mailer Error:".$mail->ErrorInfo;
+            $sentFlag = "False";
+        } else {            
+            $sentFlag = "True";
+        }
+        return $sentFlag;
+    }
+    
+    /**
+     * Send bulk email to subscribers with the given parameters
+     * @param array $recipients associates names with email addresses
+     * @param string $subject the email subject
+     * @param string $message the email message
+     * @param array $unsubs associates names with unsubscribe link
+     * @return string $sentFlag returns true for successful sent or false for faliure
+     */
+    public function toSubscribers(
+        array $recipients,
+        $subject,
+        $message,
+        array $unsubs
+        )
+    {
+        $names = array_keys($recipients);
+        foreach ($names as $name)
+        {
+            $email = $recipients[$name];
+            $unsub = $unsubs[$name];
+            $mail = new PHPMailer();
+            $mail->isSMTP();
+            $mail->Host = self::HOST;
+            $mail->SMTPAuth = true;
+            $mail->Username = self::USERNAME;
+            $mail->Password = self::PASSWORD;
+            $mail->SMTPSecure = 'tls';
+            $mail->Port = 587;
+            $mail->setFrom(self::SENDEREMAIL, self::SENDERNAME);
+            $mail->addAddress($email, $name);
+            $mail->isHTML(true);
+            $mail->Subject = $subject;
+            $mail->Body = "Dear ".$name.",<br><br>".$message.$unsub;
+        
+            if(!$mail->send()) {
+                echo "Mailer Error:".$mail->ErrorInfo;
+                $sentFlag = "False";
+            } else {
+                $sentFlag = "True";
+            }
+        }
+        return $sentFlag;
+    }
+}
+?>
